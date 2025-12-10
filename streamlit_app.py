@@ -36,6 +36,32 @@ def generate_schedule():
     # Clean column names
     df.columns = df.columns.str.strip()
     
+    # --- Feature: Mark as Done ---
+    # Ensure 'Concluído' column exists
+    if 'Concluído' not in df.columns:
+        df['Concluído'] = False
+    else:
+        # Ensure boolean type for existing column
+        df['Concluído'] = df['Concluído'].astype(bool)
+
+    st.write("### Lista de Tarefas (Edite para marcar como 'Concluído')")
+    # Allow user to edit "Concluído" column
+    edited_df = st.data_editor(
+        df, 
+        column_config={
+            "Concluído": st.column_config.CheckboxColumn(
+                "Concluído",
+                help="Marque para indicar que a tarefa foi realizada",
+                default=False,
+            )
+        },
+        disabled=["Semana Sugestiva", "Duração (horas)", "Tema da Formação", "Formador"],
+        hide_index=True,
+    )
+    
+    # Use the edited dataframe for the chart
+    df = edited_df
+
     tasks = []
     
     for index, row in df.iterrows():
@@ -57,17 +83,25 @@ def generate_schedule():
             days_needed = max(1, duration_hours / 8) # assume 8h/day
             end_date = start_date + timedelta(days=days_needed)
 
-            # Create Label for the bar
-            label = f"{topic} ({trainer})"
+            # Determine Color based on status
+            is_done = row.get('Concluído', False)
+            color_group = "Concluído" if is_done else row['Formador']
+            opacity_val = 0.5 if is_done else 1.0
+            
+            # Add status text to label
+            status_text = "✅ " if is_done else ""
+            label = f"{status_text}{topic} ({trainer})"
 
             tasks.append(dict(
                 Tarefa=topic,
                 Formador=trainer,
+                Cor=color_group, # Use this new field for coloring
                 Início=start_date,
                 Fim=end_date,
                 Duração=f"{duration_hours}h",
                 Semana=f"Semana {week}",
-                Label=label
+                Label=label,
+                Opacity=opacity_val
             ))
             
         except Exception as e:
@@ -93,8 +127,13 @@ def generate_schedule():
         x_start="Início", 
         x_end="Fim", 
         y="Tarefa", 
-        color="Formador",
-        text="Label", 
+        color="Cor", # Use our custom color group
+        text="Label",
+        opacity=0.9, # Base opacity
+        # Define specific colors if needed, otherwise Plotly assigns them
+        color_discrete_map={
+            "Concluído": "gray" # Force gray for completed tasks
+        },
         hover_data={"Duração": True, "Semana": True, "Início": False, "Fim": False, "Label": False},
         title="Cronograma de Formação 2025",
         template='plotly_dark' # DARK MODE
