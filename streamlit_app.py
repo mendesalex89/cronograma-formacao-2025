@@ -26,7 +26,7 @@ def get_start_date_from_week(week, year=2025):
 def generate_schedule():
     st.title("Cronograma de Formação 2025")
     
-    input_file = '/home/alexmendes/cronograma/tarefas.xlsx'
+    input_file = 'tarefas.xlsx'
     try:
         df = pd.read_excel(input_file)
     except FileNotFoundError:
