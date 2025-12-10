@@ -59,6 +59,20 @@ def generate_schedule():
         hide_index=True,
     )
     
+    # Allow saving the changes locally
+    import io
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        edited_df.to_excel(writer, index=False)
+        
+    st.download_button(
+        label="💾 Descarregar Excel Atualizado",
+        data=buffer,
+        file_name="tarefas_atualizadas.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        help="Descarregue o ficheiro para guardar as suas alterações no seu computador."
+    )
+
     # Use the edited dataframe for the chart
     df = edited_df
 
